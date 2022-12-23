@@ -1,0 +1,45 @@
+@startuml UML - Component Diagram
+
+    node "Play store & Apple store" {
+        [Mobile App] as mobile
+    }
+
+    cloud "Cloud provider"{
+        node "Web client" {
+            [Single-Page Application] as spa
+        }
+        node "Banking system" {
+            [Security]
+            [Account]
+            [Customer]
+            [Topic asynchronous] as topic
+            [Notification]
+        }
+    }
+
+    node "Internal system" {
+        [Audit System] as audit
+    }
+    node "External system" {
+        [Mainframe Banking] as mainframe
+    }
+
+    database "PostgreSQL" {
+        database Account as accountDb
+        database Customer as customerDb
+    }
+
+    
+    [mobile] ..> [Security] : HTTPS
+    [spa] ..> [Security] : HTTPS
+    [Security] ..> [Account] : HTTPS
+    [Account] -- [topic] : AMQP
+    [Account] ..> [Customer] : HTTPS
+    [Account] ..> audit : HTTPS
+    [Account] ..> [mainframe] : HTTPS
+    [topic] -- [Notification] : AMQP
+
+    [Account] -- [accountDb] : JDBC 
+    [Customer] -- [customerDb] : JDBC
+
+@enduml

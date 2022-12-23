@@ -1,0 +1,76 @@
+@startuml C4Model - Context Diagram
+    !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+    Person_Ext(client, "Customers", "Customer who wants a new bank account")
+    System(banking_system, "Banking system", "Allows Customers and none to create a banking account and register his information in the banking database")
+    System(audit_system, "Audit system", "Persist information releated to audit the banking process and prevent frauds")
+    System_Ext(mainframe, "Mainframe banking", "Contains the core logic of business for accounts")
+
+    Rel(client, banking_system, "Allows to open a bank account")
+    Rel(banking_system, audit_system, "Persist transaction data")
+    Rel(banking_system, mainframe, "Processes creacion account logic")
+
+@enduml
+
+@startuml C4Model - Container Diagram
+    !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+    Person_Ext(client, "Customers", "User who wants a new bank account")
+    Container_Boundary(c1, "Banking system") {
+        Container(spa, "Single-Page Application", "tech: TypeScript and Angular", $descr="Web client that provides all the functionalities by internet")
+        Container(mobil, "Mobile App", "tech: KMM, Android and Ios", $descr="Mobile app that provides banking functionalities on native devices")
+        Container(api, "API Banking", "tech: Java, Springboot", $descr="Web service that provides business logic related to account creation")
+        ContainerDb(db, "Database", "tech: PostgreSQL", $descr="Stores customer and account information")
+    }
+
+    System(audit_system, "Audit system", "Persist information releated to audit the banking process and prevent frauds")
+    System_Ext(mainframe, "Mainframe banking", "Contains the core logic of business for accounts")
+
+    Rel(client, spa, "Uses", "HTTPS")
+    Rel(client, mobil, "Uses", "HTTPS")
+    Rel(spa, api, "Uses", "HTTPS")
+    Rel(mobil, api, "Uses", "HTTPS")
+    Rel(api, db, "Reads from and writes to", "JDBC")
+    Rel(api, mainframe, "Uses", "HTTPS")
+    Rel(api, audit_system, "Uses", "HTTPS")
+
+@enduml
+
+@startuml C4Model - Component Diagram
+    !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+    Container(mobil, "Mobile App", "tech: KMM, Android and Ios", $descr="Web client that provides all the functionalities by internet")
+    Container(spa, "Single-Page Application", "tech: TypeScript and Angular", $descr="Mobile app that provides banking functionalities on native devices")
+   
+    Container_Boundary(c1, "API Banking") {
+        Component(security, "Security", "tech: Java, Springboot, Zuul ", $descr="Allows to request the resources using OAuth 2 and redirect to the requested resource")
+        Component(customer, "Customer", "tech: Java, Springboot, Spring data", $descr="Component that write and read information about customers")
+        Component(account, "Account", "tech: Java, Springboot, Spring data, Spring cloud", $descr="Component that execute account creations process")
+        Component(notification, "Notification", "tech: Java, Springboot", $descr="Component for send email and sms notification in a asynchronous way")
+       
+        ComponentQueue(topic, "Topic asynchronous", "tech: Kafka", $descr="Topic component for asynchronous comunication")
+
+    }
+
+    Container_Boundary(c2, "PostgreSQL") {
+        ComponentDb(db_customer, "Customer database", "tech: Relational database", $descr="Schema that store information from customers")
+        ComponentDb(db_account, "Account database", "tech: Relational database", $descr="Schema that store information from accounts")
+    }
+
+    System(audit_system, "Audit system", "Store information releated to audit the banking process and prevent frauds")
+    System_Ext(mainframe, "Mainframe banking", "Contains the core logic of business for accounts")
+
+
+    Rel(security, account, "Uses", "HTTPS")
+    Rel(account, customer, "Uses", "HTTPS")
+    Rel(account, topic, "Uses", "AMQP")
+    Rel(topic, notification, "Uses", "AMQP")
+    Rel(customer, db_customer, "Reads from and writes to", "JDBC")
+    Rel(account, db_account, "Reads from and writes to", "JDBC")
+    Rel(spa, security, "Uses", "HTTPS")
+    Rel(mobil, security, "Uses", "HTTPS")
+
+    Rel(account, mainframe, "Uses", "HTTPS")
+    Rel(account, audit_system, "Uses", "HTTPS")
+
+@enduml
